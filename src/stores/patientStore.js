@@ -78,6 +78,13 @@ const usePatientStore = create()(
         })
       },
 
+      // Actions - Add New Patient
+      addPatient: (patient) => {
+        set((state) => {
+          state.patients.unshift(patient) // Add to beginning of list
+        })
+      },
+
       // Actions - Update Patient Data (optimistic updates)
       updatePatientData: (patientData) => {
         set((state) => {

@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import { usePatientStore, useUIStore } from '@/stores';
+import AddPatientModal from '@/components/patients/AddPatientModal';
 import '@/lib/testSupabase'; // Auto-test Supabase connection
 
 export default function PatientsPage() {
@@ -24,6 +25,9 @@ export default function PatientsPage() {
   const filterBy = useUIStore((state) => state.filterBy);
   const setSearchTerm = useUIStore((state) => state.setSearchTerm);
   const setFilterBy = useUIStore((state) => state.setFilterBy);
+  
+  const [showAddModal, setShowAddModal] = useState(false);
+  
   // Fetch patients from Supabase on mount
   useEffect(() => {
     fetchPatients();
@@ -112,7 +116,10 @@ export default function PatientsPage() {
             Manage and view all patient records
           </p>
         </div>
-        <Button className="bg-[var(--medical-blue)] hover:bg-[var(--medical-blue)]/90 text-[var(--medical-blue-foreground)]">
+        <Button 
+          onClick={() => setShowAddModal(true)}
+          className="bg-[var(--medical-blue)] hover:bg-[var(--medical-blue)]/90 text-[var(--medical-blue-foreground)]"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add Patient
         </Button>
@@ -239,13 +246,22 @@ export default function PatientsPage() {
             }
           </p>
           {!searchTerm && (
-            <Button className="bg-[var(--medical-blue)] hover:bg-[var(--medical-blue)]/90 text-[var(--medical-blue-foreground)]">
+            <Button 
+              onClick={() => setShowAddModal(true)}
+              className="bg-[var(--medical-blue)] hover:bg-[var(--medical-blue)]/90 text-[var(--medical-blue-foreground)]"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add Your First Patient
             </Button>
           )}
         </div>
       )}
+      
+      {/* Add Patient Modal */}
+      <AddPatientModal 
+        isOpen={showAddModal} 
+        onClose={() => setShowAddModal(false)}
+      />
     </div>
   );
 }

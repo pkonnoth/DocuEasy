@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { ToastProvider } from '@/components/ui/toast';
 
 const sidebarItems = [
   {
@@ -58,7 +59,8 @@ export default function DashboardLayout({ children }) {
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-background">
+    <ToastProvider>
+      <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 max-w-screen-2xl items-center px-4">
@@ -177,6 +179,7 @@ export default function DashboardLayout({ children }) {
           </div>
         </main>
       </div>
-    </div>
+      </div>
+    </ToastProvider>
   );
 }
