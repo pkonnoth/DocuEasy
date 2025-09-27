@@ -15,7 +15,6 @@ import { Badge } from '@/components/ui/badge';
 import { usePatientStore } from '@/stores';
 import { createPatient } from '@/lib/api/patients';
 import { useToast } from '@/components/ui/toast';
-
 export default function AddPatientModal({ isOpen, onClose }) {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
