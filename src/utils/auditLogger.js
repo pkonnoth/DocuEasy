@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
 /**
- * Simple Audit Logger for EMR System
+ * Simple Audit Logger for DocuEase System
  * Captures: Actor, Action, Scope, Input, Result, Confirmation, Timestamps
  */
 

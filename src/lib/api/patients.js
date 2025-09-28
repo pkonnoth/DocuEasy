@@ -51,7 +51,7 @@ export async function getPatientWithData(id) {
       .from('encounters')
       .select('*')
       .eq('patient_id', id)
-      .order('date', { ascending: false })
+      .order('encounter_date', { ascending: false })
 
     if (encountersError) {
       handleSupabaseError(encountersError, 'fetching encounters')

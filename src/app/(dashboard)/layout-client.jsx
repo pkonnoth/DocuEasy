@@ -6,10 +6,7 @@ import { usePathname } from 'next/navigation';
 import { 
   Activity, 
   Users, 
-  FileText, 
   Calendar, 
-  Settings, 
-  Search,
   Bell,
   User,
   ChevronLeft,
@@ -18,7 +15,6 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -42,17 +38,6 @@ const sidebarItems = [
     href: '/calendar',
     icon: Calendar,
     badge: '2'
-  },
-  {
-    title: 'Audit Log',
-    href: '/audit',
-    icon: FileText,
-    adminOnly: true
-  },
-  {
-    title: 'Settings',
-    href: '/settings',
-    icon: Settings
   }
 ];
 
@@ -72,25 +57,12 @@ export default function DashboardClientLayout({ children, user, profile, isAdmin
               <div className="flex h-8 w-8 items-center justify-center rounded-md" style={{ backgroundColor: 'var(--medical-blue)' }}>
                 <Stethoscope className="h-5 w-5" style={{ color: 'var(--medical-blue-foreground)' }} />
               </div>
-              <span className="font-semibold text-lg">EMR Co-Pilot</span>
-            </div>
-          </div>
-
-          {/* Search */}
-          <div className="flex flex-1 items-center justify-center px-6">
-            <div className="w-full max-w-sm">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search patients..."
-                  className="pl-8 pr-4"
-                />
-              </div>
+              <span className="font-semibold text-lg">DocuEase</span>
             </div>
           </div>
 
           {/* Header Actions */}
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-1 items-center justify-end space-x-4">
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <Bell className="h-4 w-4" />
             </Button>
@@ -99,6 +71,7 @@ export default function DashboardClientLayout({ children, user, profile, isAdmin
                 {user?.email?.slice(0, 2).toUpperCase() || 'DR'}
               </AvatarFallback>
             </Avatar>
+            <LogoutButton />
           </div>
         </div>
       </header>
@@ -170,23 +143,20 @@ export default function DashboardClientLayout({ children, user, profile, isAdmin
             {/* User Info */}
             {!sidebarCollapsed && (
               <div className="border-t border-border/40 p-4">
-                <div className="flex items-center justify-between space-x-3">
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback>
-                        {user?.email?.slice(0, 2).toUpperCase() || 'DR'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium truncate">
-                        {user?.email || 'Unknown User'}
-                      </p>
-                      <p className="text-xs text-muted-foreground capitalize">
-                        {profile?.role || 'User'}
-                      </p>
-                    </div>
+                <div className="flex items-center space-x-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>
+                      {user?.email?.slice(0, 2).toUpperCase() || 'DR'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium truncate">
+                      {user?.email || 'Unknown User'}
+                    </p>
+                    <p className="text-xs text-muted-foreground capitalize">
+                      {profile?.role || 'User'}
+                    </p>
                   </div>
-                  <LogoutButton />
                 </div>
               </div>
             )}

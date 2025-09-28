@@ -81,23 +81,26 @@ export default function PatientsPage() {
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
+            <Card key={i} className="animate-pulse h-80 flex flex-col">
+              <CardHeader className="pb-3 flex-shrink-0">
+                <div className="flex items-start justify-between h-16">
                   <div className="flex items-center space-x-3">
-                    <div className="h-12 w-12 rounded-full bg-muted" />
-                    <div className="space-y-2">
+                    <div className="h-12 w-12 rounded-full bg-muted flex-shrink-0" />
+                    <div className="space-y-2 flex-1">
                       <div className="h-4 w-24 bg-muted rounded" />
                       <div className="h-3 w-16 bg-muted rounded" />
                     </div>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
+              <CardContent className="flex-grow flex flex-col justify-between">
+                <div className="space-y-3">
                   <div className="h-3 w-32 bg-muted rounded" />
                   <div className="h-3 w-24 bg-muted rounded" />
+                  <div className="h-3 w-28 bg-muted rounded" />
+                  <div className="h-3 w-20 bg-muted rounded" />
                 </div>
+                <div className="h-3 w-16 bg-muted rounded mt-auto" />
               </CardContent>
             </Card>
           ))}
@@ -162,70 +165,78 @@ export default function PatientsPage() {
           console.log('Patient ID:', patient.id, 'Name:', patient.first_name, patient.last_name);
           return (
           <Link key={patient.id} href={`/patient/${patient.id}`}>
-            <Card className="cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] bg-[var(--patient-card)] border-border/50">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="h-12 w-12">
+            <Card className="cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] bg-[var(--patient-card)] border-border/50 h-80 flex flex-col">
+              <CardHeader className="pb-3 flex-shrink-0">
+                <div className="flex items-start justify-between h-16">
+                  <div className="flex items-center space-x-3 flex-1 min-w-0">
+                    <Avatar className="h-12 w-12 flex-shrink-0">
                       <AvatarFallback className="bg-[var(--medical-blue)] text-[var(--medical-blue-foreground)]">
                         {patient.first_name[0]}{patient.last_name[0]}
                       </AvatarFallback>
                     </Avatar>
-                    <div>
-                      <h3 className="font-semibold text-lg">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-lg truncate">
                         {patient.first_name} {patient.last_name}
                       </h3>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground truncate">
                         MRN: {patient.medical_record_number}
                       </p>
                     </div>
                   </div>
-                  {patient.allergies.length > 0 && (
-                    <Badge variant="destructive" className="ml-2">
-                      <AlertTriangle className="h-3 w-3 mr-1" />
-                      Allergies
-                    </Badge>
-                  )}
+                  <div className="flex-shrink-0 ml-2">
+                    {patient.allergies.length > 0 && (
+                      <Badge variant="destructive">
+                        <AlertTriangle className="h-3 w-3 mr-1" />
+                        Allergies
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               
-              <CardContent className="pt-0">
-                <div className="space-y-3">
-                  {/* Basic Info */}
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+              <CardContent className="pt-0 flex-grow flex flex-col justify-between">
+                <div className="space-y-3 flex-grow">
+                  {/* Basic Info - Fixed Height */}
+                  <div className="grid grid-cols-2 gap-4 text-sm h-12">
                     <div className="flex items-center text-muted-foreground">
-                      <User className="h-4 w-4 mr-2" />
-                      {calculateAge(patient.date_of_birth)} years, {patient.gender}
+                      <User className="h-4 w-4 mr-2 flex-shrink-0" />
+                      <span className="truncate">{calculateAge(patient.date_of_birth)} years, {patient.gender}</span>
                     </div>
                     <div className="flex items-center text-muted-foreground">
-                      <Phone className="h-4 w-4 mr-2" />
-                      {patient.phone}
+                      <Phone className="h-4 w-4 mr-2 flex-shrink-0" />
+                      <span className="truncate">{patient.phone}</span>
                     </div>
                   </div>
 
-                  {/* Insurance */}
-                  <div className="flex items-center justify-between">
+                  {/* Insurance - Fixed Height */}
+                  <div className="flex items-center justify-between h-8">
                     <span className="text-sm font-medium">Insurance:</span>
                     <Badge variant="outline" className="text-xs">
                       {patient.insurance?.provider || 'N/A'}
                     </Badge>
                   </div>
 
-                  {/* Allergies */}
-                  {patient.allergies.length > 0 && (
-                    <div>
-                      <span className="text-sm font-medium text-destructive">Allergies:</span>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {patient.allergies.join(', ')}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Last Updated */}
-                  <div className="flex items-center text-xs text-muted-foreground pt-2 border-t border-border/50">
-                    <Calendar className="h-3 w-3 mr-1" />
-                    Updated {format(new Date(patient.updated_at), 'MMM d, yyyy')}
+                  {/* Allergies - Fixed Height with Overflow */}
+                  <div className="min-h-[3rem] max-h-[4.5rem]">
+                    {patient.allergies.length > 0 ? (
+                      <div>
+                        <span className="text-sm font-medium text-destructive">Allergies:</span>
+                        <p className="text-sm text-muted-foreground mt-1 overflow-hidden text-ellipsis">
+                          {patient.allergies.join(', ')}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex items-center h-12 text-sm text-muted-foreground">
+                        No known allergies
+                      </div>
+                    )}
                   </div>
+                </div>
+
+                {/* Last Updated - Fixed at Bottom */}
+                <div className="flex items-center text-xs text-muted-foreground pt-2 border-t border-border/50 mt-auto h-8 flex-shrink-0">
+                  <Calendar className="h-3 w-3 mr-1" />
+                  Updated {format(new Date(patient.updated_at), 'MMM d, yyyy')}
                 </div>
               </CardContent>
             </Card>

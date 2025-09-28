@@ -38,7 +38,7 @@ export default function LoginPage() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-[var(--medical-blue)] flex items-center justify-center">
             <LogIn className="h-8 w-8 mr-2" />
-            EMR System Demo
+            DocuEase Demo
           </CardTitle>
           <p className="text-sm text-muted-foreground mt-2">
             Demo login - no real authentication

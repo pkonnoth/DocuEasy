@@ -68,10 +68,10 @@ export default function LoginForm() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-[var(--medical-blue)] flex items-center justify-center">
             <LogIn className="h-8 w-8 mr-2" />
-            EMR System Login
+            DocuEase Login
           </CardTitle>
           <p className="text-sm text-muted-foreground mt-2">
-            Sign in to access your medical records system
+            Sign in to access your document management system
           </p>
         </CardHeader>
         

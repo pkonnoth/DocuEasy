@@ -40,6 +40,14 @@ import { getPatientWithData } from '@/lib/api/patients';
 import { getLiteratureResults } from '@/lib/api/literature';
 import AgentSummaryCard from '@/components/agents/AgentSummaryCard';
 import LiteraturePanel from '@/components/agents/LiteraturePanel';
+import CedarPanel from '@/components/CedarPanel';
+// Import Cedar-OS components
+import { FloatingCedarChat } from '@/cedar/components/chatComponents/FloatingCedarChat';
+import { SidePanelCedarChat } from '@/cedar/components/chatComponents/SidePanelCedarChat';
+import { useCedarStore } from 'cedar-os';
+// Import alert and appointment components
+import AlertNotification from '@/components/alerts/AlertNotification';
+import AppointmentScheduler from '@/components/appointments/AppointmentScheduler';
 
 export default function PatientPage() {
   const params = useParams();
@@ -56,6 +64,16 @@ export default function PatientPage() {
   const [agentActions, setAgentActions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showAppointmentScheduler, setShowAppointmentScheduler] = useState(false);
+  const [appointmentType, setAppointmentType] = useState('follow_up');
+  const [appointmentReason, setAppointmentReason] = useState('Follow-up care');
+  
+  // Cedar store hooks for messaging
+  const addMessage = useCedarStore((state) => state.addMessage);
+  const setShowChat = useCedarStore((state) => state.setShowChat);
+  const createThread = useCedarStore((state) => state.createThread);
+  const switchThread = useCedarStore((state) => state.switchThread);
+  const sendMessage = useCedarStore((state) => state.sendMessage);
 
   // Fetch patient data from Supabase
   useEffect(() => {
@@ -152,26 +170,84 @@ export default function PatientPage() {
     setAgentLoading(true);
     setActiveAgentAction(actionType);
     
-    // Simulate AI processing
-    setTimeout(() => {
-      setAgentLoading(false);
+    try {
+      let prompt = '';
+      let chatTitle = '';
+      let threadId = '';
       
       if (actionType === 'summary') {
-        // Find existing summary from mock data or create new one
-        const existingAction = agentActions.find(a => a.type === 'summary');
-        if (existingAction) {
-          setSummaryData(existingAction.result);
-          setShowSummary(true);
-        }
+        prompt = `Please provide a comprehensive AI summary of ${patient.first_name} ${patient.last_name}'s last 2 encounters. Include key findings, assessments, treatments, and any significant changes or patterns. Focus on clinical relevance and continuity of care.`;
+        chatTitle = 'Visit Summary';
+        threadId = `agent-action-summary-${patientId}`;
       } else if (actionType === 'literature') {
-        setShowLiterature(true);
+        const conditions = encounters.slice(0, 2).map(e => e.assessment).join(', ');
+        prompt = `Find relevant medical literature and research studies related to ${patient.first_name} ${patient.last_name}'s current conditions and recent assessments: ${conditions}. Include recent guidelines, treatment options, and evidence-based recommendations.`;
+        chatTitle = 'Medical Literature Search';
+        threadId = `agent-action-literature-${patientId}`;
       } else if (actionType === 'draft-note') {
-        // Handle SOAP note drafting
-        console.log('Draft SOAP note requested');
+        const latestEncounter = encounters[0];
+        prompt = `Please draft a comprehensive SOAP note for ${patient.first_name} ${patient.last_name}'s${latestEncounter ? ` most recent encounter on ${format(new Date(latestEncounter.encounter_date), 'MMM d, yyyy')}` : ' current visit'}. Include:
+        
+        SUBJECTIVE: Patient's chief complaint and symptoms
+        OBJECTIVE: Vital signs, physical examination findings, and relevant test results
+        ASSESSMENT: Clinical impression and diagnoses
+        PLAN: Treatment plan, medications, follow-up, and patient education
+        
+        Base this on the patient's medical history, current medications, and recent encounters.`;
+        chatTitle = 'SOAP Note Draft';
+        threadId = `agent-action-draft-note-${patientId}`;
       }
       
+      // Create thread for this action if it doesn't exist
+      createThread(threadId, chatTitle);
+      
+      // Switch to the action-specific thread
+      switchThread(threadId, chatTitle);
+      
+      // Open the chat to show the interaction
+      setShowChat(true);
+      
+      // Add user message to chat
+      addMessage({
+        role: 'user',
+        content: `🤖 ${chatTitle}: ${prompt}`,
+        type: 'text'
+      }, true, threadId);
+      
+      // Use Cedar's sendMessage to trigger the AI response
+      if (sendMessage) {
+        await sendMessage({
+          prompt: prompt,
+          model: 'gpt-4o',
+          stream: true,
+          threadId: threadId,
+          resourceId: patientId,
+          additionalContext: {
+            patientId: patientId,
+            actionType: actionType,
+            patientName: `${patient.first_name} ${patient.last_name}`
+          }
+        });
+      } else {
+        console.warn('sendMessage function not available in Cedar store');
+      }
+      
+      console.log(`✅ ${chatTitle} request sent through Cedar messaging system`);
+      
+    } catch (error) {
+      console.error(`Error in handleAgentAction (${actionType}):`, error);
+      alert(`Error generating ${actionType}. Please try again.`);
+    } finally {
+      setAgentLoading(false);
       setActiveAgentAction(null);
-    }, 2000);
+    }
+  };
+  
+  // Handle appointment scheduling requests
+  const handleScheduleAppointment = (type = 'follow_up', reason = 'Follow-up care') => {
+    setAppointmentType(type);
+    setAppointmentReason(reason);
+    setShowAppointmentScheduler(true);
   };
   
   const handleSummaryConfirm = () => {
@@ -210,6 +286,11 @@ export default function PatientPage() {
                   {patient.allergies.length} Allergies
                 </Badge>
               )}
+              {/* Patient Alerts Notification */}
+              <AlertNotification 
+                patientId={patientId} 
+                patientName={`${patient.first_name} ${patient.last_name}`}
+              />
             </div>
           </div>
         </div>
@@ -239,7 +320,7 @@ export default function PatientPage() {
                 <span className="font-medium">Summarize Visits</span>
               </div>
               <span className="text-sm text-muted-foreground">
-                AI summary of last 2 encounters
+                AI summary of last 2 encounters in chat
               </span>
               {agentLoading && activeAgentAction === 'summary' && (
                 <Progress value={66} className="w-full mt-2 h-2" />
@@ -257,7 +338,7 @@ export default function PatientPage() {
                 <span className="font-medium">Relevant Studies</span>
               </div>
               <span className="text-sm text-muted-foreground">
-                Find related medical literature
+                Research delivered to chat
               </span>
               {agentLoading && activeAgentAction === 'literature' && (
                 <Progress value={33} className="w-full mt-2 h-2" />
@@ -275,11 +356,72 @@ export default function PatientPage() {
                 <span className="font-medium">Draft SOAP Note</span>
               </div>
               <span className="text-sm text-muted-foreground">
-                Generate visit documentation
+                SOAP note generated in chat
               </span>
               {agentLoading && activeAgentAction === 'draft-note' && (
                 <Progress value={90} className="w-full mt-2 h-2" />
               )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Patient Management Section */}
+      <Card className="bg-gradient-to-r from-green-50 to-teal-50 border-green-200">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center">
+            <Calendar className="h-5 w-5 mr-2 text-green-600" />
+            Patient Management
+          </CardTitle>
+          <CardDescription>
+            AI-powered follow-up recommendations and appointment scheduling
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Schedule Follow-up */}
+            <Button 
+              variant="outline" 
+              className="h-auto p-4 flex-col items-start text-left border-green-200 hover:bg-green-50"
+              onClick={() => handleScheduleAppointment('follow_up', 'Routine follow-up visit')}
+            >
+              <div className="flex items-center w-full mb-2">
+                <Calendar className="h-4 w-4 mr-2 text-green-600" />
+                <span className="font-medium">Schedule Follow-up</span>
+              </div>
+              <span className="text-sm text-muted-foreground">
+                AI-recommended follow-up appointments
+              </span>
+            </Button>
+
+            {/* Lab Review Appointment */}
+            <Button 
+              variant="outline" 
+              className="h-auto p-4 flex-col items-start text-left border-green-200 hover:bg-green-50"
+              onClick={() => handleScheduleAppointment('lab_review', 'Lab results review and discussion')}
+            >
+              <div className="flex items-center w-full mb-2">
+                <TestTube className="h-4 w-4 mr-2 text-green-600" />
+                <span className="font-medium">Lab Review</span>
+              </div>
+              <span className="text-sm text-muted-foreground">
+                Schedule lab results discussion
+              </span>
+            </Button>
+
+            {/* Medication Follow-up */}
+            <Button 
+              variant="outline" 
+              className="h-auto p-4 flex-col items-start text-left border-green-200 hover:bg-green-50"
+              onClick={() => handleScheduleAppointment('follow_up', 'Medication review and adjustment')}
+            >
+              <div className="flex items-center w-full mb-2">
+                <Pill className="h-4 w-4 mr-2 text-green-600" />
+                <span className="font-medium">Medication Review</span>
+              </div>
+              <span className="text-sm text-muted-foreground">
+                Review and adjust current medications
+              </span>
             </Button>
           </div>
         </CardContent>
@@ -377,7 +519,7 @@ export default function PatientPage() {
                   Latest Vitals
                 </CardTitle>
                 <CardDescription>
-                  {format(new Date(latestEncounter.date), 'MMM d, yyyy')}
+                  {format(new Date(latestEncounter.encounter_date), 'MMM d, yyyy')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -443,7 +585,7 @@ export default function PatientPage() {
                             <Badge variant="outline">{encounter.status}</Badge>
                           </div>
                           <span className="text-sm text-muted-foreground">
-                            {format(new Date(encounter.date), 'MMM d, yyyy')}
+                            {format(new Date(encounter.encounter_date), 'MMM d, yyyy')}
                           </span>
                         </div>
                         <p className="text-sm text-muted-foreground mb-2">
@@ -526,7 +668,7 @@ export default function PatientPage() {
                                 <Badge variant="outline">{encounter.provider}</Badge>
                               </div>
                               <span className="text-sm text-muted-foreground">
-                                {format(new Date(encounter.date), 'MMMM d, yyyy')}
+                                {format(new Date(encounter.encounter_date), 'MMMM d, yyyy')}
                               </span>
                             </div>
                             
@@ -575,7 +717,7 @@ export default function PatientPage() {
                     {medications.map((medication) => (
                       <div key={medication.id} className="border rounded-lg p-4">
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold text-lg">{medication.name}</h4>
+                          <h4 className="font-semibold text-lg">{medication.medication_name}</h4>
                           <Badge variant="outline" className="bg-[var(--medical-green)]/10">
                             Active
                           </Badge>
@@ -653,6 +795,30 @@ export default function PatientPage() {
         patientId={patientId}
         isVisible={showLiterature}
         onClose={() => setShowLiterature(false)}
+      />
+      
+      {/* Cedar-OS Components */}
+      <CedarPanel patientId={patientId} />
+      
+      {/* Cedar-OS Floating Chat - AI Assistant */}
+      <FloatingCedarChat 
+        patientContext={{
+          patientId: patientId,
+          patientName: `${patient.first_name} ${patient.last_name}`,
+          patientAge: age,
+          currentMedications: medications.length,
+          recentEncounters: encounters.length
+        }}
+      />
+      
+      {/* Appointment Scheduler */}
+      <AppointmentScheduler
+        patientId={patientId}
+        patientName={`${patient.first_name} ${patient.last_name}`}
+        isVisible={showAppointmentScheduler}
+        onClose={() => setShowAppointmentScheduler(false)}
+        appointmentType={appointmentType}
+        reason={appointmentReason}
       />
     </div>
   );
