@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  docuease:
+    build: .
+    container_name: docuease-app
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    volumes:
+      - ./uploads:/app/uploads
+    restart: unless-stopped
